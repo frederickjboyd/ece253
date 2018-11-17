@@ -1,0 +1,170 @@
+
+W:/ece253/8/part4/count.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+.text
+.global _start
+_start: LDR R4, =TEST_NUM // Load the data word into R1
+   0:	e59f40f8 	ldr	r4, [pc, #248]	; 100 <TEST_NUM+0xc>
+        MOV R5, #0 // Result for counting 1s
+   4:	e3a05000 	mov	r5, #0
+        MOV R6, #0 // Result for counting 0s
+   8:	e3a06000 	mov	r6, #0
+        MOV R7, #0 // Result for counting alternating 1s and 0s
+   c:	e3a07000 	mov	r7, #0
+        MOV R11, #0 // Initializing R11 to 0
+  10:	e3a0b000 	mov	r11, #0
+
+00000014 <MAIN>:
+
+MAIN: LDR R1, [R4] // Test numbers for 1s
+  14:	e5941000 	ldr	r1, [r4]
+	  LDR R3, [R4] // Test numbers for 0s
+  18:	e5943000 	ldr	r3, [r4]
+      LDR R10, [R4] // Test numbers for alternating 1s and 0s
+  1c:	e594a000 	ldr	r10, [r4]
+      LDR R11, =0xAAAAAAAA
+  20:	e59fb0dc 	ldr	r11, [pc, #220]	; 104 <TEST_NUM+0x10>
+      ADD R4, #4
+  24:	e2844004 	add	r4, r4, #4
+      CMP R1, #0
+  28:	e3510000 	cmp	r1, #0
+      BEQ MAIN_END
+  2c:	0a000009 	beq	58 <MAIN_END>
+      BL ONES
+  30:	eb000009 	bl	5c <ONES>
+      CMP R5, R0 // Final count for 1s
+  34:	e1550000 	cmp	r5, r0
+      MOVLT R5, R0 // Replace R5 if R0 > R5
+  38:	b1a05000 	movlt	r5, r0
+      BL ZEROS
+  3c:	eb00000e 	bl	7c <ZEROS>
+      CMP R6, R0 // Final count for 0s
+  40:	e1560000 	cmp	r6, r0
+      MOVLT R6, R0 // Replace R6 if R0 > R6
+  44:	b1a06000 	movlt	r6, r0
+      BL ALTERNATE
+  48:	eb000014 	bl	a0 <ALTERNATE>
+      CMP R7, R12 // Final count for alternate
+  4c:	e157000c 	cmp	r7, r12
+      MOVLT R7, R12 // Replace R6 if R0 > R7
+  50:	b1a0700c 	movlt	r7, r12
+      B MAIN
+  54:	eaffffee 	b	14 <MAIN>
+
+00000058 <MAIN_END>:
+MAIN_END: B MAIN_END
+  58:	eafffffe 	b	58 <MAIN_END>
+
+0000005c <ONES>:
+
+ONES: MOV R0, #0
+  5c:	e3a00000 	mov	r0, #0
+
+00000060 <L1_LOOP>:
+L1_LOOP: CMP R1, #0
+  60:	e3510000 	cmp	r1, #0
+         BEQ L1_END
+  64:	0a000003 	beq	78 <L1_END>
+         LSR R2, R1, #1
+  68:	e1a020a1 	lsr	r2, r1, #1
+         AND R1, R2, R1
+  6c:	e0021001 	and	r1, r2, r1
+         ADD R0, #1
+  70:	e2800001 	add	r0, r0, #1
+         B L1_LOOP
+  74:	eafffff9 	b	60 <L1_LOOP>
+
+00000078 <L1_END>:
+L1_END: MOV PC, LR // Return
+  78:	e1a0f00e 	mov	pc, lr
+
+0000007c <ZEROS>:
+
+ZEROS: MOV R0, #0
+  7c:	e3a00000 	mov	r0, #0
+
+00000080 <L2_LOOP>:
+L2_LOOP: CMP R3, #0xFFFFFFFF
+  80:	e3730001 	cmn	r3, #1
+		 BEQ L2_END
+  84:	0a000004 	beq	9c <L2_END>
+         LSR R2, R3, #1
+  88:	e1a020a3 	lsr	r2, r3, #1
+         ADD R2, #0x80000000
+  8c:	e2822102 	add	r2, r2, #-2147483648	; 0x80000000
+         ORR R3, R2, R3
+  90:	e1823003 	orr	r3, r2, r3
+		 ADD R0, #1
+  94:	e2800001 	add	r0, r0, #1
+		 B L2_LOOP 
+  98:	eafffff8 	b	80 <L2_LOOP>
+
+0000009c <L2_END>:
+L2_END: MOV PC, LR // Return
+  9c:	e1a0f00e 	mov	pc, lr
+
+000000a0 <ALTERNATE>:
+
+ALTERNATE:	MOV R0, #0 // Initialize 1s counter to 0
+  a0:	e3a00000 	mov	r0, #0
+            // XOR for 1s
+            EOR R1, R10, R11
+  a4:	e02a100b 	eor	r1, r10, r11
+            // XOR for 0s
+            EOR R3, R10, R11
+  a8:	e02a300b 	eor	r3, r10, r11
+
+000000ac <ONES_LOOP>:
+ONES_LOOP: CMP R1, #0
+  ac:	e3510000 	cmp	r1, #0
+         BEQ MIDPOINT
+  b0:	0a000003 	beq	c4 <MIDPOINT>
+         LSR R2, R1, #1
+  b4:	e1a020a1 	lsr	r2, r1, #1
+         AND R1, R2, R1
+  b8:	e0021001 	and	r1, r2, r1
+         ADD R0, #1
+  bc:	e2800001 	add	r0, r0, #1
+         B ONES_LOOP
+  c0:	eafffff9 	b	ac <ONES_LOOP>
+
+000000c4 <MIDPOINT>:
+MIDPOINT: MOV R12, R0 // Return
+  c4:	e1a0c000 	mov	r12, r0
+		  MOV R0, #0 // Reset R0
+  c8:	e3a00000 	mov	r0, #0
+
+000000cc <ZEROS_LOOP>:
+ZEROS_LOOP: CMP R3, #0xFFFFFFFF
+  cc:	e3730001 	cmn	r3, #1
+		 BEQ COMPARE
+  d0:	0a000004 	beq	e8 <COMPARE>
+     	 LSR R2, R3, #1
+  d4:	e1a020a3 	lsr	r2, r3, #1
+     	 ADD R2, #0x80000000
+  d8:	e2822102 	add	r2, r2, #-2147483648	; 0x80000000
+		 ORR R3, R2, R3
+  dc:	e1823003 	orr	r3, r2, r3
+		 ADD R0, #1
+  e0:	e2800001 	add	r0, r0, #1
+		 B ZEROS_LOOP
+  e4:	eafffff8 	b	cc <ZEROS_LOOP>
+
+000000e8 <COMPARE>:
+COMPARE:	CMP R12, R0 // Compare longest 1s with longest 0s
+  e8:	e15c0000 	cmp	r12, r0
+			MOVLT R12, R0 // Replace R12 with R0 if R0 > R12
+  ec:	b1a0c000 	movlt	r12, r0
+			MOV PC, LR
+  f0:	e1a0f00e 	mov	pc, lr
+
+000000f4 <TEST_NUM>:
+  f4:	00000aaa 	.word	0x00000aaa
+  f8:	0000000f 	.word	0x0000000f
+  fc:	00000000 	.word	0x00000000
+ 100:	000000f4 	.word	0x000000f4
+ 104:	aaaaaaaa 	.word	0xaaaaaaaa
