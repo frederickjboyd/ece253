@@ -1,0 +1,123 @@
+
+W:/ece253/9/part2/part2.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+.text
+.global _start
+
+_start:			LDR		R1, =0xFF200000 // LEDR port
+   0:	e59f10a4 	ldr	r1, [pc, #164]	; ac <KEY_PRESS_2+0x10>
+				LDR		R2, =0xFF200050 // KEYS
+   4:	e59f20a4 	ldr	r2, [pc, #164]	; b0 <KEY_PRESS_2+0x14>
+				LDR		R8, =0xFFFEC600 // Points to timer
+   8:	e59f80a4 	ldr	r8, [pc, #164]	; b4 <KEY_PRESS_2+0x18>
+            	LDR		R0, =200000000	// Delay
+   c:	e59f00a4 	ldr	r0, [pc, #164]	; b8 <KEY_PRESS_2+0x1c>
+            	MOV		R3, #0			// Keeps track of direction (0 is left, 1 is right)
+  10:	e3a03000 	mov	r3, #0
+            	STR		R0, [R8]		// Load values =R0
+  14:	e5880000 	str	r0, [r8]
+            	MOV		R0, #0b011		// A = 1, E = 1, I = 0
+  18:	e3a00003 	mov	r0, #3
+            	STR		R0, [R8, #8]	// Set control values
+  1c:	e5880008 	str	r0, [r8, #8]
+				MOV		R6, #0x00000001 // Initial pattern - LED0 lit up
+  20:	e3a06001 	mov	r6, #1
+            	MOV		R5, #0x00000001	// 0 - pause, 1 - play
+  24:	e3a05001 	mov	r5, #1
+
+00000028 <DISPLAY>:
+			
+DISPLAY:		STR		R6, [R1]		// Display R6 on LEDs
+  28:	e5816000 	str	r6, [r1]
+
+0000002c <ROTATE>:
+
+ROTATE:			CMP		R3, #0			// Check direction
+  2c:	e3530000 	cmp	r3, #0
+				BLEQ	ROT_LEFT		// Branch if left rotation
+  30:	0b000001 	bleq	3c <ROT_LEFT>
+				CMP		R3, #0			// Check direction again
+  34:	e3530000 	cmp	r3, #0
+            	BLNE	ROT_RIGHT		// Branch if right direction
+  38:	1b000003 	blne	4c <ROT_RIGHT>
+
+0000003c <ROT_LEFT>:
+ROT_LEFT:		CMP		R6, #0x00000100	// Check if left most LED is lit up
+  3c:	e3560c01 	cmp	r6, #256	; 0x100
+				MOVEQ	R3, #1			// If left most LED is lit, change direction
+  40:	03a03001 	moveq	r3, #1
+            	LSL		R6, #1			// Rotate left
+  44:	e1a06086 	lsl	r6, r6, #1
+            	B		DELAY_1
+  48:	ea000003 	b	5c <DELAY_1>
+
+0000004c <ROT_RIGHT>:
+ROT_RIGHT:		CMP		R6, #0x00000002	// Check if right most LED is lit up
+  4c:	e3560002 	cmp	r6, #2
+				MOVEQ	R3, #0			// If right most LED is lit, change direction
+  50:	03a03000 	moveq	r3, #0
+            	ROR		R6, #1			// Rotate right
+  54:	e1a060e6 	ror	r6, r6, #1
+            	B		DELAY_1
+  58:	eaffffff 	b	5c <DELAY_1>
+
+0000005c <DELAY_1>:
+
+DELAY_1:		LDR		R7, [R2]		// Read KEYS
+  5c:	e5927000 	ldr	r7, [r2]
+				CMP 	R7, #0x00000008	// Check if KEY3 is pressed
+  60:	e3570008 	cmp	r7, #8
+            	BEQ		KEY_PRESS_1		// Branch to KEY_PRESS_1
+  64:	0a000004 	beq	7c <KEY_PRESS_1>
+
+00000068 <DELAY_2>:
+DELAY_2:		LDR		R0, [R8, #0xC]	// R0 = interrupt status register
+  68:	e598000c 	ldr	r0, [r8, #12]
+				CMP		R0, #0			// Check F == 0
+  6c:	e3500000 	cmp	r0, #0
+            	BEQ		DELAY_1			// Keep delaying if F is not 0
+  70:	0afffff9 	beq	5c <DELAY_1>
+            	STR		R0, [R8, #0xC]	// Writing to interrupt status register to reset it
+  74:	e588000c 	str	r0, [r8, #12]
+            	B		DISPLAY
+  78:	eaffffea 	b	28 <DISPLAY>
+
+0000007c <KEY_PRESS_1>:
+/* FIRST BUTTON PRESS - PAUSES LEDS */
+KEY_PRESS_1:	LDR		R7, [R2]		// Read KEYS
+  7c:	e5927000 	ldr	r7, [r2]
+				CMP		R7, #0x00000000	// Check if KEYS have been released
+  80:	e3570000 	cmp	r7, #0
+            	BEQ		KEY_RELEASE_1	// If yes, branch to KEY_RELEASE_1
+  84:	0a000000 	beq	8c <KEY_RELEASE_1>
+                B		KEY_PRESS_1		// Keep looping if KEYS have not been released
+  88:	eafffffb 	b	7c <KEY_PRESS_1>
+
+0000008c <KEY_RELEASE_1>:
+KEY_RELEASE_1:	LDR		R7, [R2]		// Read KEYS
+  8c:	e5927000 	ldr	r7, [r2]
+				CMP		R7, #0x00000008	// Check if KEY3 has been pressed
+  90:	e3570008 	cmp	r7, #8
+                BEQ		KEY_PRESS_2		// If yes, branch to KEY_PRESS_2
+  94:	0a000000 	beq	9c <KEY_PRESS_2>
+                B		KEY_RELEASE_1	// Keep looping if KEY3 has not been released
+  98:	eafffffb 	b	8c <KEY_RELEASE_1>
+
+0000009c <KEY_PRESS_2>:
+/* SECOND BUTTON PRESS - PLAYS LEDS */
+KEY_PRESS_2:	LDR		R7, [R2]		// Read KEYS
+  9c:	e5927000 	ldr	r7, [r2]
+				CMP		R7, #0x00000000 // Check if KEYS have been released
+  a0:	e3570000 	cmp	r7, #0
+                BEQ		DELAY_2			// If yes, jump back to original delay block
+  a4:	0affffef 	beq	68 <DELAY_2>
+                B		KEY_PRESS_2		// Keep looping if KEYS have not been released
+  a8:	eafffffb 	b	9c <KEY_PRESS_2>
+  ac:	ff200000 	.word	0xff200000
+  b0:	ff200050 	.word	0xff200050
+  b4:	fffec600 	.word	0xfffec600
+  b8:	0bebc200 	.word	0x0bebc200

@@ -43,7 +43,7 @@ L2_LOOP:    CMP R3, #0xFFFFFFFF
             ADD R2, #0x80000000
             ORR R3, R2, R3
             ADD R0, #1
-            B L2_LOOP 
+            B L2_LOOP
 L2_END:     MOV PC, LR // Return
 
 ALTERNATE:  MOV R0, #0 // Initialize 1s counter to 0

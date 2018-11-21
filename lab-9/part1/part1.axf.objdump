@@ -1,0 +1,117 @@
+
+W:/ece253/9/part1/part1.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+		.text
+		.global 	_start
+_start:
+		LDR 		R7, =TEST_NUM 	// address of the first word '10'
+   0:	e59f70bc 	ldr	r7, [pc, #188]	; c4 <TEST_NUM+0x2c>
+		MOV		R2, #0			// whether swapped or not through the list (0 if no swap)
+   4:	e3a02000 	mov	r2, #0
+		LDR 		R6, =TEST_NUM	// address of the first word '10'
+   8:	e59f60b4 	ldr	r6, [pc, #180]	; c4 <TEST_NUM+0x2c>
+        		MOV 		R1, #0			// counter initially set to 0
+   c:	e3a01000 	mov	r1, #0
+
+00000010 <MAIN>:
+		
+        
+MAIN: 	MOV		R8, #0
+  10:	e3a08000 	mov	r8, #0
+		MOV		R11, #0
+  14:	e3a0b000 	mov	r11, #0
+		LDR		R8, [R6]	// load the first word “10” 
+  18:	e5968000 	ldr	r8, [r6]
+		SUB		R8, #1		// —> num of loops in a list ‘9’
+  1c:	e2488001 	sub	r8, r8, #1
+		CMP 		R8, R1		// compare whether we looped the entire list 9 times
+  20:	e1580001 	cmp	r8, r1
+		BEQ		CHECK_SWAPPED
+  24:	0a000015 	beq	80 <CHECK_SWAPPED>
+		MOV 		R11, #4
+  28:	e3a0b004 	mov	r11, #4
+        		MUL 		R12, R1, R11	// Multiply 4 by element counter to find address of current element
+  2c:	e00c0b91 	mul	r12, r1, r11
+        		ADD		R5, R6, #4		// address of the first word after word count
+  30:	e2865004 	add	r5, r6, #4
+       		 LDR 		R0, [R5, R12]	// 
+  34:	e795000c 	ldr	r0, [r5, r12]
+		ADD 		R1, #1			// Increase current element counter by 1
+  38:	e2811001 	add	r1, r1, #1
+        		ADD 		R0, R7, #4
+  3c:	e2870004 	add	r0, r7, #4
+        		B 		SWAP
+  40:	ea000000 	b	48 <SWAP>
+
+00000044 <END>:
+END:  		B		END
+  44:	eafffffe 	b	44 <END>
+
+00000048 <SWAP>:
+
+// SWAP Subroutine
+SWAP:	ADD		R3, R0, #4
+  48:	e2803004 	add	r3, r0, #4
+        		LDR		R8, [R3]
+  4c:	e5938000 	ldr	r8, [r3]
+        		LDR 		R10, [R0]
+  50:	e590a000 	ldr	r10, [r0]
+        		CMP 		R10, R8 		// R0 - R3 >= 0 —> (need swap if false)
+  54:	e15a0008 	cmp	r10, r8
+		BPL		L_END		// keep the order of R0 and R3 as is (change R0 to 0 and exit SWAP)
+  58:	5a000004 	bpl	70 <L_END>
+        		STR 		R8, [R0] 		// Temporary register for the next value
+  5c:	e5808000 	str	r8, [r0]
+        		STR 		R10, [R3]		// Swapping R3 and R0
+  60:	e583a000 	str	r10, [r3]
+        		MOV 		R0, #1			// Overwriting R0 = 1 (“Swap is performed”) 
+  64:	e3a00001 	mov	r0, #1
+		ORR 		R2, R0		// Or-ing the swapped status to the general status of the list
+  68:	e1822000 	orr	r2, r2, r0
+		B		S_END
+  6c:	ea000000 	b	74 <S_END>
+
+00000070 <L_END>:
+L_END: 	MOV		R0, #0			// “Swap is not performed”
+  70:	e3a00000 	mov	r0, #0
+
+00000074 <S_END>:
+S_END:	ADD 		R7, #4
+  74:	e2877004 	add	r7, r7, #4
+        		MOV 		R0, R7
+  78:	e1a00007 	mov	r0, r7
+		B		MAIN 			// Return
+  7c:	eaffffe3 	b	10 <MAIN>
+
+00000080 <CHECK_SWAPPED>:
+
+CHECK_SWAPPED:	CMP 		R2, #0		// Check if any elements have been swapped
+  80:	e3520000 	cmp	r2, #0
+				BEQ 		END			// If yes, stop executing program
+  84:	0affffee 	beq	44 <END>
+				MOV 		R2, #0		// Reset swap
+  88:	e3a02000 	mov	r2, #0
+				MOV 		R1, #0		// Reset current element counter
+  8c:	e3a01000 	mov	r1, #0
+				MOV		R7, R6
+  90:	e1a07006 	mov	r7, r6
+                			B 		MAIN
+  94:	eaffffdd 	b	10 <MAIN>
+
+00000098 <TEST_NUM>:
+  98:	0000000a 	.word	0x0000000a
+  9c:	00000003 	.word	0x00000003
+  a0:	00000578 	.word	0x00000578
+  a4:	0000002d 	.word	0x0000002d
+  a8:	00000004 	.word	0x00000004
+  ac:	00000005 	.word	0x00000005
+  b0:	00000002 	.word	0x00000002
+  b4:	00000032 	.word	0x00000032
+  b8:	00000033 	.word	0x00000033
+  bc:	00000034 	.word	0x00000034
+  c0:	00000035 	.word	0x00000035
+  c4:	00000098 	.word	0x00000098
